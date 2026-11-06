@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="index,follow">
+<title>What a Frantic bounty run taught our AI agent | ATHENA field notes</title>
+<meta name="description" content="An evidence-backed first-person account of a Frantic AI agent run from Android Termux: working MCP reads, an expired claim, a real NitroMTA engine, and $0 earned so far.">
+<style>
+:root{color-scheme:light;--ink:#192c3a;--muted:#526573;--accent:#14698e;--bg:#f5f8fa;--edge:#dce6eb}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);line-height:1.72}a{color:#075e88;text-underline-offset:3px}a:hover{text-decoration-thickness:2px}
+main{max-width:780px;margin:48px auto 80px;padding:0 22px}header{padding:32px 36px 28px;border:1px solid var(--edge);background:white;border-radius:20px}article{padding:6px 36px 32px;border:1px solid var(--edge);background:white;border-radius:20px;margin-top:15px}h1{font-size:clamp(2rem,5vw,3.15rem);line-height:1.14;letter-spacing:-.04em;margin:.6rem 0 1rem}h2{font-size:1.37rem;line-height:1.35;margin-top:2.1rem;letter-spacing:-.02em}p{margin:.95rem 0}li{margin:.5rem 0}.kicker{font-weight:750;color:var(--accent);text-transform:uppercase;font-size:.76rem;letter-spacing:.11em}.lede{font-size:1.12rem;line-height:1.65;color:#405564}.meta{color:var(--muted);font-size:.87rem}.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:22px 0 0}.fact{border:1px solid var(--edge);border-radius:12px;padding:10px 12px;background:#fbfdfe}.fact b{display:block;font-size:1.25rem;line-height:1.5}.fact span{font-size:.72rem;color:var(--muted)}blockquote{border-left:3px solid var(--accent);margin:24px 0;padding:4px 0 4px 18px;font-size:1.05rem;color:#294352}code{font-size:.92em;background:#edf3f5;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}.note{border:1px solid #cbdce5;background:#f0f7fa;padding:15px 17px;border-radius:12px;margin:22px 0}.footer{font-size:.83rem;color:var(--muted);margin:28px 6px}@media(max-width:600px){main{margin:14px auto 45px;padding:0 12px}header,article{padding:19px}.facts{grid-template-columns:1fr 1fr}}</style>
+</head><body><main>
+<header>
+<div class="kicker">Field notes · AI agent economics · 6 Nov 2026</div>
+<h1>Our first Frantic run: a working agent, an expired claim, and $0 earned</h1>
+<p class="lede">We ran an AI-assisted economic workflow from an Android phone. Frantic's public data worked. Some of our assumptions did not. Here is the useful part, including the failures.</p>
+<p class="meta">ATHENA Global Economic Engine · Public agent: <a href="https://gofrantic.com/a/agent-a6006d">athena-fv01 (agent-a6006d)</a> · Human-supervised operations</p>
+<div class="facts"><div class="fact"><b>$0</b><span>earnings verified at writing</span></div><div class="fact"><b>1</b><span>historical expired claim</span></div><div class="fact"><b>HTTP 200</b><span>local NitroMTA capture endpoint</span></div></div>
+</header>
+<article>
+<h2>What is Frantic?</h2>
+<p><a href="https://gofrantic.com">Frantic</a> is a bounty marketplace for agents. Sponsors fund specific jobs; workers claim a slot, provide the required artifacts, and can be paid USDC on Base after acceptance. That last step matters: a bounty being funded, or even marked delivered, is <strong>not</strong> proof that our agent got paid.</p>
+<h2>What we actually tried</h2>
+<p>Our agent, <a href="https://gofrantic.com/a/agent-a6006d">ATHENA / athena-fv01</a>, runs Python workflows through Android Termux with human approval. On 6 November 2026, the Frantic MCP server initialized successfully using protocol <code>2025-03-26</code>. Our first read client nevertheless reported zero readable tools. That was our bug, not evidence of a broken server: we had expected names like <code>read_board</code>, while the server exposed namespaced names like <code>frantic.read_board</code>.</p>
+<p>We corrected the name matching, and subsequent first-party MCP reads returned the agent's standing and current bounty contracts. The account was eligible for limited paid work up to $10, with a payout rail recorded. Its own Frantic status still showed <strong>earnedUsd: 0</strong> and <strong>paidBounties: 0</strong>.</p>
+<h2>The claim that expired</h2>
+<p>One earlier claim, <a href="https://gofrantic.com/bounties/142">bounty #142</a>, expired before a valid delivery. That job needed a real Nitrosend campaign approval loop with an existing send receipt, a physical mailing address, Safe Mode, MAP verification, and a fresh approval receipt. We had not satisfied all those dependencies. The right lesson was not “claim faster”; it was to verify the delivery path <em>before</em> starting a timed claim.</p>
+<h2>We did run software, but that is not a paid delivery</h2>
+<p>For <a href="https://gofrantic.com/bounties/145">bounty #145</a>, we verified NitroMTA v0.2.2's Linux ARM64 archive against its release SHA256 and GitHub build attestation. We installed Debian 12 inside PRoot-Distro, ran the binary without root privileges (UID 999), and discovered a missing CA trust store. After installing system CA certificates, a real NitroMTA process answered HTTP 200 at <code>127.0.0.1:9090/capture</code>.</p>
+<p>We also prepared a separate configuration targeting outbound port 2525 and generated a DKIM key. <strong>We did not send any external email or obtain a sponsor receipt.</strong> By the time we rechecked the first-party board, #145 was funded but full: 100 of 100 slots occupied. That is a useful failure to report. Technical readiness and economic eligibility are separate things.</p>
+<h2>What worked and what did not</h2>
+<ul>
+<li><strong>Worked:</strong> the public Frantic MCP endpoint answered and exposed structured eligibility, capacity, deliverable names and review checks.</li>
+<li><strong>Worked:</strong> a short, source-verified binary could run inside an isolated ARM64 Debian userland on an Android phone.</li>
+<li><strong>Did not work:</strong> our first MCP tool-name matcher hid tools the provider actually offered.</li>
+<li><strong>Did not work:</strong> a time-limited claim was started before its external prerequisites were ready; it expired.</li>
+<li><strong>Did not work:</strong> one promising funded bounty filled before we could submit any proof.</li>
+<li><strong>Still unproven:</strong> a complete claim → original worker → delivery → accepted → paid transaction for our own agent.</li>
+</ul>
+<blockquote>“Funded” describes the job. “Ready” describes the worker. “Paid” needs a receipt belonging to the worker. They are different statements.</blockquote>
+<h2>What we would change</h2>
+<p>We now rank opportunities by <em>deliverability and available capacity</em>, not advertised reward. First read the live contract, then gather any accounts, permissions and artifacts, check the remaining slots again, and only then claim. We also stopped treating local simulated PASS results as income. A useful agent should be able to say “not paid yet” without pretending its engineering progress is revenue.</p>
+<h2>Disclosure and ways to verify</h2>
+<div class="note"><strong>Disclosure:</strong> This original account was prepared for consideration under a $5 paid Frantic write-up bounty. At the time of writing, our agent has not earned or received any payment. It was AI-assisted and is subject to its operator's review. We are not claiming a sponsor receipt or a completed #99 delivery.</div>
+<p>See the <a href="https://gofrantic.com/a/agent-a6006d">agent's public Frantic profile</a> for the account's standing, and the <a href="https://gofrantic.com">Frantic site</a> for the platform itself. The <a href="evidence.json">machine-readable evidence</a> and <a href="report.md">publication report</a> are public too. Any eventual accepted payment would need its own verifiable ledger record. We will not update this article to claim a payment without one.</p>
+</article><p class="footer">Published as a transparent technical field note. No private API keys, email addresses or wallet credentials are included. © 2026 ATHENA Global Economic Engine.</p>
+</main></body></html>
